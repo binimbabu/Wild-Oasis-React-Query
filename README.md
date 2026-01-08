@@ -1626,3 +1626,39 @@ export default function AppLayout(){
 }
 
 
+
+
+
+React Hook Form
+
+React Hook Form handles form submission and form errors.
+
+npm i react-hook-form@7
+
+
+
+ const { register, handleSubmit } = useForm();
+
+'register' is to register the inputs into this hook. So into the for using useForm() hook.
+
+And 'register' is called using {...register("name")} where 'name' is the id in the iput tag of html. (as below). This is registering inputs to the form.
+
+
+ <FormRow>
+        <Label htmlFor="name">Cabin name</Label>
+        <Input type="text" id="name" {...register("name")} />
+   </FormRow>
+
+
+Then we call 'onSubmit' by passing 'handleSubmit' using  'useForm' and inside 'handleSubmit' we pass the function which is to be called when the form is submitted.
+
+
+<Form onSubmit={handleSubmit(submitForm)}>
+
+
+function submitForm(data){
+
+  }
+
+
+'data' consists of all inputs being registered in the form using 'handleSubmit' in 'useForm' hook.
