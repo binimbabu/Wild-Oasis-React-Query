@@ -1662,3 +1662,534 @@ function submitForm(data){
 
 
 'data' consists of all inputs being registered in the form using 'handleSubmit' in 'useForm' hook.
+
+
+
+
+
+
+
+
+
+
+
+CreateCabinForm.jsx
+
+
+import styled from "styled-components";
+
+import Input from "../../ui/Input";
+import Form from "../../ui/Form";
+import Button from "../../ui/Button";
+import FileInput from "../../ui/FileInput";
+import Textarea from "../../ui/Textarea";
+import { useForm, useMutation } from "react-hook-form";
+import createCabin from '../../services/apiCabins';
+import { useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
+
+const FormRow = styled.div`
+  display: grid;
+  align-items: center;
+  grid-template-columns: 24rem 1fr 1.2fr;
+  gap: 2.4rem;
+
+  padding: 1.2rem 0;
+
+  &:first-child {
+    padding-top: 0;
+  }
+
+  &:last-child {
+    padding-bottom: 0;
+  }
+
+  &:not(:last-child) {
+    border-bottom: 1px solid var(--color-grey-100);
+  }
+
+  &:has(button) {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1.2rem;
+  }
+`;
+
+const Label = styled.label`
+  font-weight: 500;
+`;
+
+const Error = styled.span`
+  font-size: 1.4rem;
+  color: var(--color-red-700);
+`;
+
+function CreateCabinForm() {
+const { register, handleSubmit, reset} = useForm();
+const queryClient = useQueryClient();
+
+const {mutate, isLoading: isCreating} = useMutation({
+ mutationFn: createCabin,
+ onSuccess: () =>{
+  toast.success("new cabin successfully created");
+  queryClient.invalidateQueries({queryKey: ['cabin']});
+  reset();
+ },
+ onError: (err) => toast.error(err.message)
+})
+
+
+
+  function submitForm(data){
+   mutate(data)
+  }
+  return (
+    <Form onSubmit={handleSubmit(submitForm)}>
+      <FormRow>
+        <Label htmlFor="name">Cabin name</Label>
+        <Input type="text" id="name" {...register("name")} />
+      </FormRow>
+
+      <FormRow>
+        <Label htmlFor="maxCapacity">Maximum capacity</Label>
+        <Input type="number" id="maxCapacity" {...register("maxCapacity")} />
+      </FormRow>
+
+      <FormRow>
+        <Label htmlFor="regularPrice">Regular price</Label>
+        <Input type="number" id="regularPrice" {...register("regularPrice")} />
+      </FormRow>
+
+      <FormRow>
+        <Label htmlFor="discount">Discount</Label>
+        <Input type="number" id="discount" defaultValue={0} {...register("discount")}  />
+      </FormRow>
+
+      <FormRow>
+        <Label htmlFor="description">Description for website</Label>
+        <Textarea type="number" id="description" defaultValue="" {...register("description")} />
+      </FormRow>
+
+      <FormRow>
+        <Label htmlFor="image">Cabin photo</Label>
+        <FileInput id="image" accept="image/*" />
+      </FormRow>
+
+      <FormRow>
+        {/* type is an HTML attribute! */}
+        <Button variation="secondary" type="reset">
+          Cancel
+        </Button>
+        <Button disabled={isCreating}>Add cabin</Button>
+      </FormRow>
+    </Form>
+  );
+}
+
+export default CreateCabinForm;
+
+
+
+
+In CreateCabinForm.jsx for the name field we add validation to the name field by passing as an argument with 'required' key and the message when the field isn't entered.
+
+
+{...register("name"), {
+          required: "This field is required"
+        }}
+
+
+
+'handleSubmit' is called each time when we submit the form. And that point each validators are called and hence 'required' (which we give in register) is checked for each fields in the form. If there is errors in any validation in the form then 'handleSubmit' will not call the 'submitForm' function but instead will call the second function we pass in 'handleSubmit' (say function 'onError' here)
+
+
+onSubmit={handleSubmit(submitForm, onError)}
+
+
+
+and the minimum value can be set along with a message when data fails (here minimum value is 1, with a validation message) in register
+
+eg:-
+
+ {...register("maxCapacity"), {
+          required: "This field is required",
+          min:{
+            value: 1,
+            message: "Capacity should be at least 1"
+          }
+        }}
+
+
+
+
+The 'discount' field need to be less than regularPrice, for that we can write custom validation using ('validate' key in register and in 'validate' we pass a callback function and the argument passed in callback function we get the current value and this current value is currently being input in the field . The logic written in 'validate' callback function when return true then the field is validated), 'getValues' in 'useForm' we get the form values ( eg getValues().regularPrice ).
+
+
+{...register("discount"), {
+          required: "This field is required",
+          validate: (value) => value <= getValues().regularPrice || "Discount should be less then regular price"
+        }}
+
+
+
+We get 'formState' from 'useForm' and from 'formState' we gets errors in the form.
+
+const { register, handleSubmit, reset, getValues, formState} = useForm();
+const { errors } = formState;
+
+
+And pass the error message ' {errors?.name?.message && <p style={{color:red}}>{errors.name.message}</p>}'
+
+<FormRow>
+        <Label htmlFor="name">Cabin name</Label>
+        <Input type="text" id="name" {...register("name"), {
+          required: "This field is required"
+        }} />
+         <Error>{errors.name.message}</Error>
+      </FormRow>
+
+
+
+
+
+CreateCabinForm.jsx
+
+
+import styled from "styled-components";
+
+import Input from "../../ui/Input";
+import Form from "../../ui/Form";
+import Button from "../../ui/Button";
+import FileInput from "../../ui/FileInput";
+import Textarea from "../../ui/Textarea";
+import { useForm, useMutation } from "react-hook-form";
+import createCabin from '../../services/apiCabins';
+import { useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
+
+const FormRow = styled.div`
+  display: grid;
+  align-items: center;
+  grid-template-columns: 24rem 1fr 1.2fr;
+  gap: 2.4rem;
+
+  padding: 1.2rem 0;
+
+  &:first-child {
+    padding-top: 0;
+  }
+
+  &:last-child {
+    padding-bottom: 0;
+  }
+
+  &:not(:last-child) {
+    border-bottom: 1px solid var(--color-grey-100);
+  }
+
+  &:has(button) {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1.2rem;
+  }
+`;
+
+const Label = styled.label`
+  font-weight: 500;
+`;
+
+const Error = styled.span`
+  font-size: 1.4rem;
+  color: var(--color-red-700);
+`;
+
+function CreateCabinForm() {
+const { register, handleSubmit, reset, getValues, formState} = useForm();
+const { errors } = formState;
+const queryClient = useQueryClient();
+
+const {mutate, isLoading: isCreating} = useMutation({
+ mutationFn: createCabin,
+ onSuccess: () =>{
+  toast.success("new cabin successfully created");
+  queryClient.invalidateQueries({queryKey: ['cabin']});
+  reset();
+ },
+ onError: (err) => toast.error(err.message)
+})
+
+
+
+  function submitForm(data){
+   mutate(data)
+  }
+
+function onError(errors){
+
+}
+
+  return (
+    <Form onSubmit={handleSubmit(submitForm, onError)}>
+      <FormRow>
+        <Label htmlFor="name">Cabin name</Label>
+        <Input type="text" id="name" {...register("name"), {
+          required: "This field is required"
+        }} />
+        {errors?.name?.message && <Error>{errors.name.message}</Error>}
+      </FormRow>
+
+      <FormRow>
+        <Label htmlFor="maxCapacity">Maximum capacity</Label>
+        <Input type="number" id="maxCapacity" {...register("maxCapacity"), {
+          required: "This field is required",
+          min:{
+            value: 1,
+            message: "Capacity should be at least 1"
+          }
+        }} />
+      </FormRow>
+
+      <FormRow>
+        <Label htmlFor="regularPrice">Regular price</Label>
+        <Input type="number" id="regularPrice" {...register("regularPrice"), {
+          required: "This field is required",
+          min:{
+            value: 1,
+            message: "Capacity should be at least 1"
+          }
+        }} />
+      </FormRow>
+
+      <FormRow>
+        <Label htmlFor="discount">Discount</Label>
+        <Input type="number" id="discount" defaultValue={0} {...register("discount"), {
+          required: "This field is required",
+          validate: (value) => value <= getValues().regularPrice || "Discount should be less then regular price"
+        }}  />
+      </FormRow>
+
+      <FormRow>
+        <Label htmlFor="description">Description for website</Label>
+        <Textarea type="number" id="description" defaultValue="" {...register("description"), {
+          required: "This field is required"
+        }} />
+      </FormRow>
+
+      <FormRow>
+        <Label htmlFor="image">Cabin photo</Label>
+        <FileInput id="image" accept="image/*" />
+      </FormRow>
+
+      <FormRow>
+        {/* type is an HTML attribute! */}
+        <Button variation="secondary" type="reset">
+          Cancel
+        </Button>
+        <Button disabled={isCreating}>Add cabin</Button>
+      </FormRow>
+    </Form>
+  );
+}
+
+export default CreateCabinForm;
+
+
+
+Create 'FormRow.jsx' in 'ui' folder. And restructuring 'CreateCabinForm.jsx' like shown below
+
+
+
+FormRow.jsx
+
+
+import styled from "styled-components";
+
+const StyledFormRow = styled.div`
+  display: grid;
+  align-items: center;
+  grid-template-columns: 24rem 1fr 1.2fr;
+  gap: 2.4rem;
+
+  padding: 1.2rem 0;
+
+  &:first-child {
+    padding-top: 0;
+  }
+
+  &:last-child {
+    padding-bottom: 0;
+  }
+
+  &:not(:last-child) {
+    border-bottom: 1px solid var(--color-grey-100);
+  }
+
+  &:has(button) {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1.2rem;
+  }
+`;
+
+const Label = styled.label`
+  font-weight: 500;
+`;
+
+const Error = styled.span`
+  font-size: 1.4rem;
+  color: var(--color-red-700);
+`;
+
+
+export default function FormRow({label, error, children}){
+    return (
+         <StyledFormRow>
+        { label && <Label htmlFor={children.props.id}>{label}</Label> }
+        {children}
+        {error && <Error>{error}</Error>}
+      </StyledFormRow>
+    )
+}
+
+
+
+CreateCabinForm.jsx
+
+
+import styled from "styled-components";
+
+import Input from "../../ui/Input";
+import Form from "../../ui/Form";
+import Button from "../../ui/Button";
+import FileInput from "../../ui/FileInput";
+import Textarea from "../../ui/Textarea";
+import { useForm, useMutation } from "react-hook-form";
+import createCabin from '../../services/apiCabins';
+import { useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
+import FormRow from '../../ui/FormRow'
+
+const StyledFormRow = styled.div`
+  display: grid;
+  align-items: center;
+  grid-template-columns: 24rem 1fr 1.2fr;
+  gap: 2.4rem;
+
+  padding: 1.2rem 0;
+
+  &:first-child {
+    padding-top: 0;
+  }
+
+  &:last-child {
+    padding-bottom: 0;
+  }
+
+  &:not(:last-child) {
+    border-bottom: 1px solid var(--color-grey-100);
+  }
+
+  &:has(button) {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1.2rem;
+  }
+`;
+
+const Label = styled.label`
+  font-weight: 500;
+`;
+
+const Error = styled.span`
+  font-size: 1.4rem;
+  color: var(--color-red-700);
+`;
+
+function CreateCabinForm() {
+const { register, handleSubmit, reset, getValues, formState} = useForm();
+const { errors } = formState;
+const queryClient = useQueryClient();
+
+const {mutate, isLoading: isCreating} = useMutation({
+ mutationFn: createCabin,
+ onSuccess: () =>{
+  toast.success("new cabin successfully created");
+  queryClient.invalidateQueries({queryKey: ['cabin']});
+  reset();
+ },
+ onError: (err) => toast.error(err.message)
+})
+
+
+
+  function submitForm(data){
+   mutate(data)
+  }
+
+function onError(errors){
+
+}
+
+  return (
+    <Form onSubmit={handleSubmit(submitForm, onError)}>
+      <FormRow label="Cabin name" error={errors?.name?.message}>
+        <Input type="text" id="name" {...register("name"), {
+          required: "This field is required"
+        }} />
+      </FormRow>
+
+      <FormRow label="Maximum capacity" error={errors?.maxCapacity?.message}>
+        <Input type="number" id="maxCapacity" {...register("maxCapacity"), {
+          required: "This field is required",
+          min:{
+            value: 1,
+            message: "Capacity should be at least 1"
+          }
+        }} />
+      </FormRow>
+
+      <FormRow label="Regular price" error={errors?.regularPrice?.message}>
+        <Input type="number" id="regularPrice" {...register("regularPrice"), {
+          required: "This field is required",
+          min:{
+            value: 1,
+            message: "Capacity should be at least 1"
+          }
+        }} />
+      </FormRow>
+
+      <FormRow label="Discount" error={errors?.discount?.message}>
+        <Input type="number" id="discount" defaultValue={0} {...register("discount"), {
+          required: "This field is required",
+          validate: (value) => value <= getValues().regularPrice || "Discount should be less then regular price"
+        }}  />
+      </FormRow>
+
+      <FormRow label="Description for website" error={errors?.description?.message}>
+        <Textarea type="number" id="description" defaultValue="" {...register("description"), {
+          required: "This field is required"
+        }} />
+      </FormRow>
+
+      <FormRow label="Cabin photo">
+        <Label htmlFor="image">Cabin photo</Label>
+        <FileInput id="image" accept="image/*" />
+      </FormRow>
+
+      <FormRow>
+        {/* type is an HTML attribute! */}
+        <Button variation="secondary" type="reset">
+          Cancel
+        </Button>
+        <Button disabled={isCreating}>Add cabin</Button>
+      </FormRow>
+    </Form>
+  );
+}
+
+export default CreateCabinForm;
+
+
+
+
+
